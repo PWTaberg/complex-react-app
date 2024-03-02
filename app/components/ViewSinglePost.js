@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import Page from "./Page";
-import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Axios from "axios";
 import LoadingDotsIcon from "./LoadingDotsIcon";
 import ReactMarkdown from "react-markdown";
@@ -9,11 +9,10 @@ import NotFound from "./NotFound";
 import StateContext from "../StateContext";
 import DispatchContext from "../DispatchContext";
 
-function ViewSinglePost() {
+function ViewSinglePost(props) {
   const navigate = useNavigate();
   const appState = useContext(StateContext);
   const appDispatch = useContext(DispatchContext);
-
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(true);
   const [post, setPost] = useState();
@@ -36,9 +35,8 @@ function ViewSinglePost() {
     return () => {
       ourRequest.cancel();
     };
-  }, []);
+  }, [id]);
 
-  // If loading is completed and still no post !! => 404
   if (!isLoading && !post) {
     return <NotFound />;
   }
@@ -66,24 +64,23 @@ function ViewSinglePost() {
     const areYouSure = window.confirm(
       "Do you really want to delete this post?"
     );
-
     if (areYouSure) {
       try {
         const response = await Axios.delete(`/post/${id}`, {
           data: { token: appState.user.token }
         });
-
         if (response.data == "Success") {
-          // Display flash
+          // 1. display a flash message
           appDispatch({
             type: "flashMessage",
             value: "Post was successfully deleted."
           });
-          // Redirect to profile
+
+          // 2. redirect back to the current user's profile
           navigate(`/profile/${appState.user.username}`);
         }
       } catch (e) {
-        console.log("There was a problem");
+        console.log("There was a problem.");
       }
     }
   }
@@ -96,8 +93,8 @@ function ViewSinglePost() {
           <span className="pt-2">
             <Link
               to={`/post/${post._id}/edit`}
-              data-tooltip-content="Edit"
-              data-tooltip-id="edit"
+              data-tip="Edit"
+              data-for="edit"
               className="text-primary mr-2"
             >
               <i className="fas fa-edit"></i>
@@ -105,8 +102,8 @@ function ViewSinglePost() {
             <Tooltip id="edit" className="custom-tooltip" />{" "}
             <a
               onClick={deleteHandler}
-              data-tooltip-content="Delete"
-              data-tooltip-id="delete"
+              data-tip="Delete"
+              data-for="delete"
               className="delete-post-button text-danger"
             >
               <i className="fas fa-trash"></i>
@@ -133,6 +130,7 @@ function ViewSinglePost() {
           allowedElements={[
             "p",
             "br",
+            "strong",
             "em",
             "h1",
             "h2",
